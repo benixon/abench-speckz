@@ -1632,3 +1632,29 @@ def test_error_bars_ci95_in_full_report(tmp_path):
     assert "_errLow" in html
     assert "_errHigh" in html
     assert "abenchErrorBars" in html
+
+def test_plot_comparison_joins_baseline_on_x(tmp_path):
+    for d in (tmp_path / "cur", tmp_path / "base"):
+        store.init_results_dir(d)
+        for i, t in enumerate(["1", "8"]):
+            store.append_run(
+                d,
+                {
+                    "run_id": f"r{i}",
+                    "config_hash": f"h{i}",
+                    "vars": {"threads": t},
+                    "tags": ["bench"],
+                    "exit_code": 0,
+                    "results": {"rps": 100.0 * int(t)},
+                    "failure_reason": None,
+                },
+            )
+            store.update_aggregates_for_hash(d, f"h{i}")
+
+    plots = tmp_path / "plots.yaml"
+    plots.write_text("- id: p1\n  type: line\n  x: threads\n  y: rps\n")
+    report = tmp_path / "r.html"
+    query.stats(tmp_path / "cur", report=report, plots=plots, baseline=tmp_path / "base", out=io.StringIO())
+    table = report.read_text().split("Data</summary>")[1].split("</table>")[0]
+    assert "<th>threads</th>" in table
+    assert table.count("+0.0%") == 2

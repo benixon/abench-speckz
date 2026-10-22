@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Fixed
+
+- **Per-plot baseline comparison matched the wrong baseline rows** — with `--baseline`, a plot's "Data" table joined current and baseline rows on `group_by` only, so every x value was compared against the same baseline row. It now joins on the x variable too and shows it as a column.
+
 ## [0.14.1] - 2026-05-26
 
 ### Fixed
