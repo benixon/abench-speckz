@@ -1633,6 +1633,7 @@ def test_error_bars_ci95_in_full_report(tmp_path):
     assert "_errHigh" in html
     assert "abenchErrorBars" in html
 
+
 def test_plot_comparison_joins_baseline_on_x(tmp_path):
     for d in (tmp_path / "cur", tmp_path / "base"):
         store.init_results_dir(d)
