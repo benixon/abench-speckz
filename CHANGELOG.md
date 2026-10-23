@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Fixed
 
 - **Per-plot baseline comparison matched the wrong baseline rows** — with `--baseline`, a plot's "Data" table joined current and baseline rows on `group_by` only, so every x value was compared against the same baseline row. It now joins on the x variable too and shows it as a column.
+- **`stats --from-raw` / `--group-by` and HTML reports failed with DuckDB 2.0** — DuckDB 2.0 reads `started_at` in `runs.jsonl` as a timezone-aware timestamp, and fetching it required the optional `pytz` module (`Required module 'pytz' failed to import`). Raw-run queries now select only the `vars` and `results` columns they use.
 
 ## [0.14.1] - 2026-05-26
 
