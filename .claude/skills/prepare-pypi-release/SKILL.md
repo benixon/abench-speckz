@@ -1,9 +1,15 @@
 ---
 name: prepare-pypi-release
-description: Bump version, update CHANGELOG, build and validate the PyPI distribution for abench-speckz. Run when the user asks to prepare, cut, or publish a release.
+description: Bump version, update CHANGELOG, validate the build, and open a release PR for abench-speckz. Merging the PR publishes to PyPI via GitHub Actions. Run when the user asks to prepare, cut, or publish a release.
 ---
 
 Prepare abench-speckz for a PyPI release. Follow these steps in order.
+
+Publishing is automated: `.github/workflows/release.yml` runs on every push to `main`, and when the
+version in `pyproject.toml` has no matching `vX.Y.Z` tag it re-runs CI, builds, publishes to PyPI
+(Trusted Publishing, `pypi` environment), then creates the `vX.Y.Z` tag and a GitHub Release whose
+notes are the version's CHANGELOG section. This skill's job ends at opening the release PR —
+never `twine upload`, tag, or push to `main` directly.
 
 ## Step 1 — Determine the new version
 
@@ -96,50 +102,37 @@ twine check dist/abench_speckz-X.Y.Z*
 
 Both the `.whl` and `.tar.gz` must show `PASSED`. If either fails, fix the issue (usually a malformed README or missing metadata) before committing.
 
-## Step 7 — Commit the version bump
+## Step 7 — Commit on a release branch
 
-Stage only the three version files (do not stage `dist/`):
+Stage only the three version files (do not stage `dist/`), on a new branch:
 
 ```bash
+git switch -c release/vX.Y.Z
 git add pyproject.toml src/abench_speckz/__init__.py CHANGELOG.md
 git commit -m "Bump version to X.Y.Z, update CHANGELOG"
 ```
 
-## Step 8 — Tag and push
+## Step 8 — Push and open the PR
 
 ```bash
-git tag vX.Y.Z
-git push origin main --tags
+git push -u origin release/vX.Y.Z
+gh pr create --base main --title "Release vX.Y.Z" --body "<the new CHANGELOG section>"
 ```
 
-Confirm both the commit and the tag are on origin before proceeding.
-
-## Step 9 — Publish to PyPI
-
-```bash
-source .venv/bin/activate
-twine upload dist/abench_speckz-X.Y.Z*
-```
-
-If you want to smoke-test on TestPyPI first:
-
-```bash
-twine upload --repository testpypi dist/abench_speckz-X.Y.Z*
-# verify, then publish to the real index:
-twine upload dist/abench_speckz-X.Y.Z*
-```
-
-## Step 10 — Report to the user
+## Step 9 — Report to the user
 
 Tell the user:
-- The new version
-- That the tag `vX.Y.Z` has been pushed
-- That the package is live on PyPI (or confirm if they chose TestPyPI only)
+- The new version and the PR link
+- That merging the PR publishes to PyPI: the `release` workflow tests, builds, uploads, then creates the
+  `vX.Y.Z` tag and GitHub Release (the publish job may wait for approval on the `pypi` environment)
+- They can watch it with `gh run watch` or under the repo's Actions tab after merging
 
 ## Gotchas
 
 - **`dist/` is not in `.gitignore`** — do not `git add dist/` or it will end up in the repo.
 - **Version must match in all three files.** A mismatch between `pyproject.toml` and `__init__.py` will confuse users importing the package.
 - **Do not amend published commits.** Once a version tag is pushed, create a new patch release for any follow-up fixes.
+- **Do not create the `vX.Y.Z` tag yourself.** The release workflow treats an existing tag as "already released" and skips publishing.
+- **Do not leave `## [X.Y.Z]` missing from CHANGELOG.md.** The workflow uses that section as the GitHub Release notes.
 - **`python -m build` uses the installed setuptools**, not the venv's source tree. Make sure `pip install -e '.[dev]'` was run in the active venv.
-- **PyPI releases are permanent.** Once a version is uploaded it cannot be replaced — only yanked. Double-check `twine check` passes before uploading.
+- **PyPI releases are permanent.** Once a version is uploaded it cannot be replaced — only yanked. Double-check `twine check` passes before opening the PR (the release workflow runs `twine check --strict`).
