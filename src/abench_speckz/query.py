@@ -203,7 +203,8 @@ def _from_raw(
         metrics=[],
         extra_clauses=("exit_code = 0", "results IS NOT NULL", "NOT list_contains(tags, 'warmup')"),
     )
-    rows_sql = f"SELECT * FROM {src} WHERE {where_clause}"
+    # Select only what is used: DuckDB 2.x reads ISO timestamps as TIMESTAMPTZ, which needs pytz to fetch.
+    rows_sql = f"SELECT vars, results FROM {src} WHERE {where_clause}"
     raw_rows = con.execute(rows_sql, params).fetchall()
     headers = [d[0] for d in con.description]
     runs = [dict(zip(headers, r, strict=True)) for r in raw_rows]
