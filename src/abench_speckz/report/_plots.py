@@ -202,11 +202,11 @@ def build_plot_artifacts(
         comparisons = compare_rows(
             rows,
             baseline_rows,
-            gb_keys,
+            group_by,
             higher_is_better=hib,
             threshold=regression_threshold,
         )
-        data_table = comparison_table_html(comparisons, gb_keys, pretty_map)
+        data_table = comparison_table_html(comparisons, group_by, pretty_map)
     else:
         comparisons = None
         data_table = table_html(rows, list(group_by) + ["metric"] + list(STAT_COLS) if rows else [])
